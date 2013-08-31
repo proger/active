@@ -20,3 +20,27 @@ sync:
 		| env PERLIO=:raw perl -ne 's#.*\t.*\t$$ENV{"PWD"}/(apps|deps)/(\w+)/(?!ebin)#\2# && print "$$1=$$2\n"' \
 		| xargs -n1 rebar compile
 ```
+
+### Setting up
+
+Just add a line to `rebar.config`:
+
+```erlang
+    {active, ".*", {git, "git@github.com:proger/active", "HEAD"}}
+```
+
+And make sure you start it along in your release boot scripts or application startup scripts:
+
+```sh
+ERL_LIBS=deps erl -pa ebin -config sys.config \
+    -eval '[ok = application:ensure_started(A, permanent) || A <- [sasl,lager,gproc,erlfsmon,compiler,crypto,syntax_tools,tools,rebar,active]]'
+```
+
+### Caveats
+
+* `rebar` depends on `sasl`. If you don't wish to see large SASL logs (e.g. you use `lager`),
+turn them off in your config:
+
+```erlang
+    {sasl, [{sasl_error_logger, false}]}
+```
