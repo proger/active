@@ -1,11 +1,12 @@
 {application, active,
  [
   {description, ""},
-  {vsn, "1"},
+  {vsn, git},
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+                  erlfsmon
                  ]},
   {mod, { active_app, []}},
   {env, []}
