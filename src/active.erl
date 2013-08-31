@@ -48,12 +48,15 @@ handle_info({_Pid, {erlfsmon,file_event}, {Path, Flags}}, State) ->
     case lists:prefix(Cur, P) of
         true ->
             Components = P -- Cur,
-            error_logger:info_msg("event: ~p ~p", [Components, Flags]),
+            %error_logger:info_msg("event: ~p ~p", [Components, Flags]),
             path_event(Components, Flags);
         false ->
             ok
     end,
 
+    {noreply, State};
+handle_info({load_ebin, Atom}, State) ->
+    do_load_ebin(Atom),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -88,9 +91,11 @@ path_modified_event(["deps", Name, "src"|_Px] = _Path) ->
     % TODO: need a way to compile a single dep
     run_rebar(compile, rebar_conf([]));
 
-path_modified_event([P, Name, "ebin"|_Px] = _Path) when P =:= "apps" orelse P =:= "deps" ->
-    % TODO
-    load_stuff;
+path_modified_event([P, _Name, "ebin", EName|_Px] = _Path) when P =:= "apps" orelse P =:= "deps" ->
+    load_ebin(EName);
+
+path_modified_event(["ebin", EName|_Px] = _Path) ->
+    load_ebin(EName);
 
 path_modified_event(P) ->
     error_logger:warning_msg("path_modified_event: ignoring: ~p", [P]),
@@ -130,3 +135,41 @@ run_rebar(Commands, Conf) when is_list(Commands) ->
     rebar_core:process_commands(Commands, Conf);
 run_rebar(Command, Conf) ->
     run_rebar([Command], Conf).
+
+load_ebin(EName) ->
+    Tokens = string:tokens(EName, "."),
+    case Tokens of
+        [Name, "beam"] ->
+            do_load_ebin(list_to_atom(Name));
+        [Name, "bea#"] ->
+            case monitor_handles_renames() of
+                false ->
+                    erlang:send_after(2000, ?SERVER, {load_ebin, list_to_atom(Name)}),
+                    delayed;
+                true ->
+                    ignored
+            end;
+        %[Name, Smth] -> ok;
+        _ ->
+            error_logger:warning_msg("load_ebin: unknown ebin file: ~p", [EName]),
+            ok
+    end.
+
+do_load_ebin(Module) ->
+    {Module, Binary, Filename} = code:get_object_code(Module),
+    code:load_binary(Module, Filename, Binary),
+    error_logger:info_msg("active: do_load_ebin: loaded: ~p", [Module]),
+    reloaded.
+
+monitor_handles_renames([renamed|_]) -> true;
+monitor_handles_renames([_|Events]) -> monitor_handles_renames(Events);
+monitor_handles_renames([]) -> false.
+
+monitor_handles_renames() ->
+    case get(monitor_handles_renames) of
+        undefined ->
+            R = monitor_handles_renames(erlfsmon:known_events()),
+            put(monitor_handles_renames, R),
+            R;
+        V -> V
+    end.
