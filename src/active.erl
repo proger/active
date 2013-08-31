@@ -30,6 +30,8 @@ init(Args) ->
     erlfsmon:subscribe(),
     rebar_log:init(rebar_config:new()),
 
+    erlang:process_flag(priority, low),
+
     {ok, Args}.
 
 handle_call(_Request, _From, State) ->
