@@ -6,6 +6,7 @@
   {applications, [
                   kernel,
                   stdlib,
+                  rebar,
                   erlfsmon
                  ]},
   {mod, { active_app, []}},
