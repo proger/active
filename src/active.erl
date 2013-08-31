@@ -136,6 +136,9 @@ run_rebar(Commands, Conf) when is_list(Commands) ->
 run_rebar(Command, Conf) ->
     run_rebar([Command], Conf).
 
+%%
+%% TODO: discover any compile callbacks in rebar and stop using filesystem events for beam loads
+%%
 load_ebin(EName) ->
     Tokens = string:tokens(EName, "."),
     case Tokens of
