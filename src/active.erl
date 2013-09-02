@@ -6,7 +6,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0]).
+-export([start_link/0, build/0]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -22,6 +22,9 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
+build() ->
+    gen_server:cast(?SERVER, build).
+
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
@@ -36,6 +39,10 @@ init(Args) ->
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
+
+handle_cast(build, State) ->
+    run_rebar(compile, rebar_conf([])),
+    {noreply, {last, user_build}};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
