@@ -110,8 +110,17 @@ path_modified_event(P) ->
 toplevel_app() -> lists:last(filename:split(filename:absname(""))).
 
 rebar_default_conf() ->
-    C = rebar_config:new(),
-    C1 = rebar_config:base_config(C),
+    rebar_default_conf(filename:absname("")).
+
+rebar_default_conf(RootDir) ->
+    ConfFile = filename:join([RootDir, "rebar.config"]),
+    C1 = case filelib:is_file(ConfFile) of
+        true ->
+            C = rebar_config:new(ConfFile),
+            setelement(2, C, RootDir); % C#config.dir
+        false ->
+            rebar_config:base_config(rebar_config:new())
+    end,
 
     %% Keep track of how many operations we do, so we can detect bad commands
     C2 = rebar_config:set_xconf(C1, operations, 0),
