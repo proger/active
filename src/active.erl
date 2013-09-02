@@ -154,7 +154,7 @@ load_ebin(EName) ->
         [Name, "bea#"] ->
             case monitor_handles_renames() of
                 false ->
-                    erlang:send_after(1000, ?SERVER, {load_ebin, list_to_atom(Name)}),
+                    erlang:send_after(500, ?SERVER, {load_ebin, list_to_atom(Name)}),
                     delayed;
                 true ->
                     ignored
