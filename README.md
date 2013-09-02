@@ -36,6 +36,8 @@ ERL_LIBS=deps erl -pa ebin -config sys.config \
     -eval '[ok = application:ensure_started(A, permanent) || A <- [sasl,lager,gproc,erlfsmon,compiler,crypto,syntax_tools,tools,rebar,active]]'
 ```
 
+That's it!
+
 ### Caveats
 
 * `rebar` depends on `sasl`. If you don't wish to see large SASL logs (e.g. you use `lager`),
