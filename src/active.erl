@@ -32,7 +32,7 @@ init(Args) ->
 
     erlang:process_flag(priority, low),
 
-    {ok, Args}.
+    {ok, fresh}.
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -45,7 +45,7 @@ handle_info({_Pid, {erlfsmon,file_event}, {Path, Flags}}, State) ->
     Cur = filename:split(CurDir),
     P = filename:split(Path),
 
-    case lists:prefix(Cur, P) of
+    Result = case lists:prefix(Cur, P) of
         true ->
             Components = P -- Cur,
             %error_logger:info_msg("event: ~p ~p", [Components, Flags]),
@@ -54,12 +54,12 @@ handle_info({_Pid, {erlfsmon,file_event}, {Path, Flags}}, State) ->
             ok
     end,
 
-    {noreply, State};
+    {noreply, {last, event, Path, Flags, Result}};
 handle_info({load_ebin, Atom}, State) ->
     do_load_ebin(Atom),
-    {noreply, State};
-handle_info(_Info, State) ->
-    {noreply, State}.
+    {noreply, {last, do_load_ebin, Atom}};
+handle_info(Info, State) ->
+    {noreply, {last, unk, Info}}.
 
 terminate(_Reason, _State) ->
     ok.
@@ -132,7 +132,8 @@ rebar_conf([], Conf) ->
 rebar_conf(Args) -> rebar_conf(Args, rebar_default_conf()).
 
 run_rebar(Commands, Conf) when is_list(Commands) -> 
-    rebar_core:process_commands(Commands, Conf);
+    R = (catch rebar_core:process_commands(Commands, Conf)),
+    R;
 run_rebar(Command, Conf) ->
     run_rebar([Command], Conf).
 
