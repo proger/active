@@ -88,15 +88,11 @@ path_event(C, [_E|Events]) ->
 path_event(_, []) ->
     done.
 
-path_modified_event(["apps", Name, "src"|_Px] = _Path) ->
+path_modified_event([P, Name, "src", EName|_Px] = _Path) when P =:= "apps" orelse P =:= "deps" ->
     run_rebar(compile, rebar_conf([{apps, Name}]));
 
 path_modified_event(["src"|_Px] = _Path) ->
     run_rebar(compile, rebar_conf([{apps, toplevel_app()}]));
-
-path_modified_event(["deps", Name, "src"|_Px] = _Path) ->
-    % TODO: need a way to compile a single dep
-    run_rebar(compile, rebar_conf([]));
 
 path_modified_event([P, _Name, "ebin", EName|_Px] = _Path) when P =:= "apps" orelse P =:= "deps" ->
     load_ebin(EName);
