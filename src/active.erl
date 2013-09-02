@@ -100,6 +100,9 @@ path_modified_event([P, _Name, "ebin", EName|_Px] = _Path) when P =:= "apps" ore
 path_modified_event(["ebin", EName|_Px] = _Path) ->
     load_ebin(EName);
 
+path_modified_event([".rebarinfo"]) ->
+    dont_care;
+
 path_modified_event(P) ->
     error_logger:warning_msg("path_modified_event: ignoring: ~p", [P]),
     dont_care.
