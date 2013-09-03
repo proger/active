@@ -1,5 +1,8 @@
+ERL_FLAGS= +sbwt none +swct lazy +swt high
+
 run:
 	ERL_LIBS=deps erl -pa ebin -config sys.config \
+		 $(ERL_FLAGS) \
 		 -eval '[ok = application:ensure_started(A, permanent) || A <- [sasl,lager,gproc,erlfsmon,compiler,crypto,syntax_tools,tools,rebar,active]]'
 
 ifeq ($(shell uname), Darwin)
