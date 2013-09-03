@@ -46,3 +46,15 @@ turn them off in your config:
 ```erlang
     {sasl, [{sasl_error_logger, false}]}
 ```
+
+* `rebar` writes to stdout by default. If you wish to change this behaviour,
+you may redefine `console_log_function` and `log_function` variables.
+(this is pending [merge to upstream](https://github.com/rebar/rebar/pull/131),
+`active` currently uses [my fork of rebar](https://github.com/proger/rebar) anyway)
+
+```erlang
+    {rebar, [
+            {log_function, {error_logger, format}},
+            {console_log_function, {error_logger, format}}
+    ]}
+```
