@@ -6,7 +6,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, build/0]).
+-export([start_link/0, build/0, rebar_log/2]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -24,6 +24,12 @@ start_link() ->
 
 build() ->
     gen_server:cast(?SERVER, build).
+
+rebar_log(Format, Message) ->
+    case application:get_application(lager) of
+        {ok, lager} -> lager:log(info, [{app, rebar}], Format, Message);
+        undefined -> error_logger:format(Format, Message)
+    end.
 
 %% ------------------------------------------------------------------
 %% gen_server Function Definitions
@@ -104,7 +110,7 @@ path_modified_event([".rebarinfo"]) ->
     dont_care;
 
 path_modified_event(P) ->
-    error_logger:warning_msg("path_modified_event: ignoring: ~p", [P]),
+    error_logger:warning_msg("active: unhandled path: ~p", [P]),
     dont_care.
 
 toplevel_app() -> lists:last(filename:split(filename:absname(""))).
@@ -177,7 +183,7 @@ load_ebin(EName) ->
 do_load_ebin(Module) ->
     {Module, Binary, Filename} = code:get_object_code(Module),
     code:load_binary(Module, Filename, Binary),
-    error_logger:info_msg("active: do_load_ebin: loaded: ~p", [Module]),
+    error_logger:info_msg("active: module loaded: ~p", [Module]),
     reloaded.
 
 monitor_handles_renames([renamed|_]) -> true;
