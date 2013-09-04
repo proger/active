@@ -29,7 +29,7 @@ build() ->
 %% gen_server Function Definitions
 %% ------------------------------------------------------------------
 
-init(Args) ->
+init([]) ->
     erlfsmon:subscribe(),
     rebar_log:init(rebar_config:new()),
 
@@ -40,14 +40,14 @@ init(Args) ->
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
-handle_cast(build, State) ->
+handle_cast(build, _State) ->
     run_rebar(compile, rebar_conf([])),
     {noreply, {last, user_build}};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info({_Pid, {erlfsmon,file_event}, {Path, Flags}}, State) ->
+handle_info({_Pid, {erlfsmon,file_event}, {Path, Flags}}, _State) ->
     CurDir = filename:absname(""),
     Cur = filename:split(CurDir),
     P = filename:split(Path),
@@ -62,10 +62,10 @@ handle_info({_Pid, {erlfsmon,file_event}, {Path, Flags}}, State) ->
     end,
 
     {noreply, {last, event, Path, Flags, Result}};
-handle_info({load_ebin, Atom}, State) ->
+handle_info({load_ebin, Atom}, _State) ->
     do_load_ebin(Atom),
     {noreply, {last, do_load_ebin, Atom}};
-handle_info(Info, State) ->
+handle_info(Info, _State) ->
     {noreply, {last, unk, Info}}.
 
 terminate(_Reason, _State) ->
@@ -88,7 +88,7 @@ path_event(C, [_E|Events]) ->
 path_event(_, []) ->
     done.
 
-path_modified_event([P, Name, "src", EName|_Px] = _Path) when P =:= "apps" orelse P =:= "deps" ->
+path_modified_event([P, Name, "src"|_Px] = _Path) when P =:= "apps" orelse P =:= "deps" ->
     run_rebar(compile, rebar_conf([{apps, Name}]));
 
 path_modified_event(["src"|_Px] = _Path) ->
