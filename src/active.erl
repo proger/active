@@ -88,7 +88,10 @@ path_event(C, [E|_Events]) when
         E =:= created
         orelse E =:= modified
         orelse E =:= renamed ->
-    path_modified_event(C);
+    case path_filter(C) of
+        true -> path_modified_event(C);
+        false -> ignore
+    end;
 path_event(C, [_E|Events]) ->
     path_event(C, Events);
 path_event(_, []) ->
@@ -105,9 +108,6 @@ path_modified_event([P, _Name, "ebin", EName|_Px] = _Path) when P =:= "apps" ore
 
 path_modified_event(["ebin", EName|_Px] = _Path) ->
     load_ebin(EName);
-
-path_modified_event([".rebarinfo"]) ->
-    dont_care;
 
 path_modified_event(P) ->
     error_logger:warning_msg("active: unhandled path: ~p", [P]),
@@ -198,3 +198,22 @@ monitor_handles_renames() ->
             R;
         V -> V
     end.
+
+%
+% Filters
+%
+
+path_filter(L) ->
+    not lists:any(fun(E) -> not path_filter_dir(E) end, L) andalso path_filter_last(lists:last(L)).
+
+path_filter_dir(".git") -> false;
+path_filter_dir(".hg")  -> false;
+path_filter_dir(".svn") -> false;
+path_filter_dir("CVS")  -> false;
+path_filter_dir(_)      -> true.
+
+path_filter_last(".rebarinfo")     -> false;   % new rebars
+path_filter_last("LICENSE")        -> false;
+path_filter_last("4913 (deleted)") -> false;   % vim magical file
+path_filter_last("4913")           -> false;
+path_filter_last(_)                -> true.
