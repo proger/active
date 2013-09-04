@@ -58,3 +58,6 @@ you may redefine `console_log_function` and `log_function` variables.
             {console_log_function, {error_logger, format}}
     ]}
 ```
+
+* due to the fact that `rebar` changes code paths while running, your regular rebar escript executable may fail.
+Make sure your rebar escript is as fresh as possible if it fails.
