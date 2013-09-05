@@ -60,4 +60,4 @@ you may redefine `console_log_function` and `log_function` variables.
 ```
 
 * due to the fact that `rebar` changes code paths while running, your regular rebar escript executable may fail.
-Make sure your rebar escript is as fresh as possible if it fails.
+Make sure your rebar escript is as fresh as possible if it fails (take one from [my fork](https://github.com/proger/rebar))
