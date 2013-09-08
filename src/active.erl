@@ -85,9 +85,9 @@ code_change(_OldVsn, State, _Extra) ->
 %% ------------------------------------------------------------------
 
 path_event(C, [E|_Events]) when
-        E =:= created
-        orelse E =:= modified
-        orelse E =:= renamed ->
+        E =:= created;
+        E =:= modified;
+        E =:= renamed ->
     case path_filter(C) of
         true -> path_modified_event(C);
         false -> ignore
@@ -97,21 +97,22 @@ path_event(C, [_E|Events]) ->
 path_event(_, []) ->
     done.
 
-path_modified_event([P, Name, "src"|_Px] = _Path) when P =:= "apps" orelse P =:= "deps" ->
-    run_rebar(compile, rebar_conf([{apps, Name}]));
+path_modified_event([P, Name|Px] = _Path) when P =:= "apps"; P =:= "deps" ->
+    app_modified_event(Name, Px);
 
-path_modified_event(["src"|_Px] = _Path) ->
-    run_rebar(compile, rebar_conf([{apps, toplevel_app()}]));
-
-path_modified_event([P, _Name, "ebin", EName|_Px] = _Path) when P =:= "apps" orelse P =:= "deps" ->
-    load_ebin(EName);
-
-path_modified_event(["ebin", EName|_Px] = _Path) ->
-    load_ebin(EName);
+path_modified_event([D|Px] = _Path) when D =:= "src"; D =:= "priv"; D =:= "c_src"; D =:= "ebin" ->
+    app_modified_event(toplevel_app(), Px);
 
 path_modified_event(P) ->
     error_logger:warning_msg("active: unhandled path: ~p", [P]),
     dont_care.
+
+app_modified_event(_App, ["ebin", EName|_] = _Path) ->
+    load_ebin(EName);
+app_modified_event(App, [D|_] = _Path) when D =:= "src"; D =:= "priv"; D =:= "c_src" ->
+    run_rebar(compile, rebar_conf([{apps, App}]));
+app_modified_event(App, P) ->
+    error_logger:warning_msg("active: app ~p; unhandled path: ~p", [App, P]).
 
 toplevel_app() -> lists:last(filename:split(filename:absname(""))).
 
@@ -210,6 +211,7 @@ path_filter_dir(".git") -> false;
 path_filter_dir(".hg")  -> false;
 path_filter_dir(".svn") -> false;
 path_filter_dir("CVS")  -> false;
+path_filter_dir("log")  -> false;
 path_filter_dir(_)      -> true.
 
 path_filter_last(".rebarinfo")     -> false;   % new rebars
