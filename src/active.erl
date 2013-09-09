@@ -153,9 +153,16 @@ rebar_conf([], Conf) ->
 
 rebar_conf(Args) -> rebar_conf(Args, rebar_default_conf()).
 
-run_rebar(Commands, Conf) when is_list(Commands) -> 
-    R = (catch rebar_core:process_commands(Commands, Conf)),
-    R;
+run_rebar(Commands, Conf) when is_list(Commands) ->
+    {ok, Cwd} = file:get_cwd(),
+    %%% XXX: rebar must not clobber the current directory in the future
+    try rebar_core:process_commands(Commands, Conf) of
+        R -> R
+    catch
+        Err:Reason ->
+            file:set_cwd(Cwd),
+            {error, {Err, Reason}}
+    end;
 run_rebar(Command, Conf) ->
     run_rebar([Command], Conf).
 
