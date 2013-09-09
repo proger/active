@@ -161,7 +161,8 @@ rebar_conf(Args) -> rebar_conf(Args, rebar_default_conf()).
 run_rebar(Commands, Conf) when is_list(Commands) ->
     {ok, Cwd} = file:get_cwd(),
     %%% XXX: rebar must not clobber the current directory in the future
-    try rebar_core:process_commands(Commands, Conf) of
+    %try rebar_core:process_commands(Commands, Conf) of
+    try eflame:apply(rebar_core, process_commands, [Commands, Conf]) of
         R -> R
     catch
         Err:Reason ->
