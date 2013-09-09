@@ -106,7 +106,7 @@ path_modified_event([P, Name|Px] = _Path) when P =:= "apps"; P =:= "deps" ->
     app_modified_event(Name, Px);
 
 path_modified_event([D|Px] = _Path) when D =:= "src"; D =:= "priv"; D =:= "c_src"; D =:= "ebin" ->
-    app_modified_event(toplevel_app(), Px);
+    app_modified_event(toplevel_app(), [D|Px]);
 
 path_modified_event(P) ->
     error_logger:warning_msg("active: unhandled path: ~p", [P]),
