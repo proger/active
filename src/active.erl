@@ -6,7 +6,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([start_link/0, build/0, rebar_log/2]).
+-export([start_link/0, build/0, build_sync/0, rebar_log/2]).
 
 %% ------------------------------------------------------------------
 %% gen_server Function Exports
@@ -24,6 +24,9 @@ start_link() ->
 
 build() ->
     gen_server:cast(?SERVER, build).
+
+build_sync() ->
+    gen_server:call(?SERVER, build).
 
 rebar_log(Format, Message) ->
     case application:get_application(lager) of
@@ -43,6 +46,8 @@ init([]) ->
 
     {ok, fresh}.
 
+handle_call(build, _From, _State) ->
+    {reply, run_rebar(compile, rebar_conf([])), {last, user_sync_build}};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
