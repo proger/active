@@ -15,6 +15,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
+-record(state, {last, root}).
+
 %% ------------------------------------------------------------------
 %% API Function Definitions
 %% ------------------------------------------------------------------
@@ -44,23 +46,23 @@ init([]) ->
 
     erlang:process_flag(priority, low),
 
-    {ok, fresh}.
+    {ok, #state{last=fresh, root=erlfsmon:path()}}.
 
-handle_call(build, _From, _State) ->
-    {reply, run_rebar(compile, rebar_conf([])), {last, user_sync_build}};
+handle_call(build, _From, State) ->
+    run_rebar(compile, rebar_conf([])),
+    {reply, State#state{last=user_sync_build}};
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
-handle_cast(build, _State) ->
+handle_cast(build, State) ->
     run_rebar(compile, rebar_conf([])),
-    {noreply, {last, user_build}};
+    {noreply, State#state{last=user_build}};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info({_Pid, {erlfsmon,file_event}, {Path, Flags}}, _State) ->
-    CurDir = filename:absname(""),
-    Cur = filename:split(CurDir),
+handle_info({_Pid, {erlfsmon,file_event}, {Path, Flags}}, #state{root=Root} = State) ->
+    Cur = path_shorten(filename:split(Root)),
     P = filename:split(Path),
 
     Result = case lists:prefix(Cur, P) of
@@ -72,12 +74,12 @@ handle_info({_Pid, {erlfsmon,file_event}, {Path, Flags}}, _State) ->
             ok
     end,
 
-    {noreply, {last, event, Path, Flags, Result}};
-handle_info({load_ebin, Atom}, _State) ->
+    {noreply, State#state{last={event, Path, Flags, Result}}};
+handle_info({load_ebin, Atom}, State) ->
     do_load_ebin(Atom),
-    {noreply, {last, do_load_ebin, Atom}};
-handle_info(Info, _State) ->
-    {noreply, {last, unk, Info}}.
+    {noreply, State#state{last={do_load_ebin, Atom}}};
+handle_info(Info, State) ->
+    {noreply, State#state{last={unk, Info}}}.
 
 terminate(_Reason, _State) ->
     ok.
@@ -211,6 +213,21 @@ monitor_handles_renames() ->
             R;
         V -> V
     end.
+
+% ["a", "b", ".."] -> ["a"]
+path_shorten(Coms) ->
+    path_shorten_r(lists:reverse(Coms), [], 0).
+
+path_shorten_r([".."|Rest], Acc, Count) ->
+    path_shorten_r(Rest, Acc, Count + 1);
+path_shorten_r(["."|Rest], Acc, Count) ->
+    path_shorten_r(Rest, Acc, Count);
+path_shorten_r([_C|Rest], Acc, Count) when Count > 0 ->
+    path_shorten_r(Rest, Acc, Count - 1);
+path_shorten_r([C|Rest], Acc, 0) ->
+    path_shorten_r(Rest, [C|Acc], 0);
+path_shorten_r([], Acc, _) ->
+    Acc.
 
 %
 % Filters
