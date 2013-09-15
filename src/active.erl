@@ -168,6 +168,7 @@ run_rebar(Commands, Conf) when is_list(Commands) ->
     catch
         Err:Reason ->
             file:set_cwd(Cwd),
+            error_logger:error_msg("active: rebar failed: ~p ~p", [{Err, Reason}, erlang:get_stacktrace()]),
             {error, {Err, Reason}}
     end;
 run_rebar(Command, Conf) ->
