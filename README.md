@@ -26,7 +26,7 @@ sync:
 Just add a line to `rebar.config`:
 
 ```erlang
-    {active, ".*", {git, "git@github.com:proger/active", "HEAD"}}
+    {active, ".*", {git, "git://github.com/proger/active", "HEAD"}}
 ```
 
 And make sure you start it along in your release boot scripts or application startup scripts:
