@@ -1,16 +1,17 @@
 ERL_FLAGS= +sbwt none +swct lazy +swt high
 
 run:
-	ERL_LIBS=deps erl -pa ebin -config sys.config \
+	ERL_LIBS=deps erl -pa ebin \
 		 $(ERL_FLAGS) \
-		 -eval '[ok = application:ensure_started(A, permanent) || A <- [sasl,lager,gproc,erlfsmon,compiler,crypto,syntax_tools,tools,rebar,active]]'
+		 -eval '[ok = application:ensure_started(A, permanent) || A <- [erlfsmon,active]]'
 
 ifeq ($(shell uname), Darwin)
-sync:
-	fsevent_watch -F src/ | env PERLIO=:raw perl -ne 's#.*\t.*\t$$ENV{"PWD"}/src/.*erl$$#\2# && print "skip_deps=true\n"' | xargs -tn1 rebar compile
+WATCHER = fsevent_watch -F .
 else
-sync:
-	fanotify_watch -c | env PERLIO=:raw perl -ne 's#.*\t.*\t$$ENV{"PWD"}/src/.*erl$$#\2# && print "skip_deps=true\n"' | xargs -tn1 rebar compile
+WATCHER = fanotify_watch -c
 endif
+
+sync:
+	$(WATCHER) | env PERLIO=:raw perl -ne '/.*\t.*\t$$ENV{"PWD"}.*erl$$/ && print $$_."\0"' | tee /dev/stderr | xargs -0tn1 -I % rebar compile
 
 .PHONY: run
