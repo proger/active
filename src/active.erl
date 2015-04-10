@@ -89,6 +89,13 @@ path_modified_event([P, Name|Px] = _Path) when P =:= "apps"; P =:= "deps" ->
 path_modified_event(["ebin" = D|Px] = _Path) ->
     app_modified_event(toplevel_app(), [D|Px]);
 
+path_modified_event([File]) ->
+    Tokens = string:tokens(File, "."),
+    case Tokens of
+        [Name, "beam"] -> do_load_ebin(list_to_atom(Name));
+        _ -> dont_care
+    end;
+
 path_modified_event(_) ->
     %error_logger:warning_msg("active: unhandled path: ~p", [P]),
     dont_care.
